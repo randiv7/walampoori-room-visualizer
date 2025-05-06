@@ -1,6 +1,7 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { useDesign } from "@/contexts/DesignContext";
-import { Canvas, Rect, IEvent, Object as FabricObject } from "fabric";
+import { Canvas, Rect, TEvent, Object as FabricObject } from "fabric";
 
 export const Canvas2D = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -29,7 +30,7 @@ export const Canvas2D = () => {
         console.error("Error initializing fabric canvas:", error);
       }
     }
-  }, [canvasRef.current]); // Only run when canvasRef.current changes
+  }, [canvasRef, fabricCanvas]); // Depend on both canvasRef and fabricCanvas
   
   // Draw room
   useEffect(() => {
@@ -119,8 +120,8 @@ export const Canvas2D = () => {
           transparentCorners: false,
         });
         
-        // Fix the TypeScript error by using proper event type
-        rect.on('moving', function(opt) {
+        // Use the correct TEvent type instead of IEvent
+        rect.on('moving', function(this: FabricObject) {
           const obj = this;
           const roomBounds = {
             left: roomLeft,
@@ -136,7 +137,7 @@ export const Canvas2D = () => {
           if (obj.top! + obj.height! > roomBounds.bottom) obj.set('top', roomBounds.bottom - obj.height!);
         });
         
-        rect.on('modified', function() {
+        rect.on('modified', function(this: FabricObject) {
           // Convert back to room coordinates
           const updatedX = ((this.left || 0) - roomLeft) / scale;
           const updatedZ = ((this.top || 0) - roomTop) / scale;
