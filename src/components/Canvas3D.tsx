@@ -1,10 +1,39 @@
 
-import React, { Suspense } from "react";
+import React, { Suspense, useRef } from "react";
 import { useDesign } from "@/contexts/DesignContext";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import * as THREE from "three";
 
-export const Canvas3D = () => {
+// Define proper TypeScript interfaces
+interface RoomProps {
+  room: {
+    width: number;
+    length: number;
+    height: number;
+    wallColor: string;
+    floorColor: string;
+  };
+}
+
+interface FurnitureProps {
+  furniture: {
+    id?: string;
+    width: number;
+    length: number;
+    height: number;
+  };
+  position: {
+    x: number;
+    y: number;
+    z: number;
+    rotation: number;
+    scale: number;
+    color: string;
+  };
+}
+
+export const Canvas3D: React.FC = () => {
   const { currentRoom, placedFurniture, furnitureCatalog } = useDesign();
 
   const getFurnitureById = (id: string) => {
@@ -22,12 +51,13 @@ export const Canvas3D = () => {
   return (
     <div className="canvas-3d w-full h-full border border-border rounded-md bg-gray-900 relative">
       <Canvas shadows>
+        <color attach="background" args={["#111827"]} />
         <Suspense fallback={null}>
           <ambientLight intensity={0.5} />
           <directionalLight 
             position={[5, 10, 5]} 
-            intensity={1} 
             castShadow 
+            intensity={1}
           />
           
           {/* Room */}
@@ -40,7 +70,7 @@ export const Canvas3D = () => {
             
             return (
               <Furniture 
-                key={index}
+                key={`furniture-${index}`}
                 furniture={furniture}
                 position={item}
               />
@@ -72,17 +102,10 @@ export const Canvas3D = () => {
 };
 
 // Room component
-interface RoomProps {
-  room: {
-    width: number;
-    length: number;
-    height: number;
-    wallColor: string;
-    floorColor: string;
-  };
-}
-
 const Room = ({ room }: RoomProps) => {
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: room.floorColor });
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: room.wallColor });
+
   return (
     <group>
       {/* Floor */}
@@ -92,7 +115,7 @@ const Room = ({ room }: RoomProps) => {
         receiveShadow
       >
         <planeGeometry args={[room.width, room.length]} />
-        <meshStandardMaterial color={room.floorColor} />
+        <primitive object={floorMaterial} />
       </mesh>
       
       {/* Back Wall */}
@@ -101,7 +124,7 @@ const Room = ({ room }: RoomProps) => {
         receiveShadow
       >
         <planeGeometry args={[room.width, room.height]} />
-        <meshStandardMaterial color={room.wallColor} />
+        <primitive object={wallMaterial} />
       </mesh>
       
       {/* Left Wall */}
@@ -111,30 +134,16 @@ const Room = ({ room }: RoomProps) => {
         receiveShadow
       >
         <planeGeometry args={[room.length, room.height]} />
-        <meshStandardMaterial color={room.wallColor} />
+        <primitive object={wallMaterial} />
       </mesh>
     </group>
   );
 };
 
 // Furniture component
-interface FurnitureProps {
-  furniture: {
-    width: number;
-    length: number;
-    height: number;
-  };
-  position: {
-    x: number;
-    y: number;
-    z: number;
-    rotation: number;
-    scale: number;
-    color: string;
-  };
-}
-
 const Furniture = ({ furniture, position }: FurnitureProps) => {
+  const material = new THREE.MeshStandardMaterial({ color: position.color });
+  
   return (
     <group 
       position={[position.x, position.y + furniture.height * position.scale / 2, position.z]} 
@@ -143,7 +152,7 @@ const Furniture = ({ furniture, position }: FurnitureProps) => {
     >
       <mesh castShadow>
         <boxGeometry args={[furniture.width, furniture.height, furniture.length]} />
-        <meshStandardMaterial color={position.color} />
+        <primitive object={material} />
       </mesh>
     </group>
   );
