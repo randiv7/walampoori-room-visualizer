@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDesign } from "@/contexts/DesignContext";
-import { Canvas, Rect } from "fabric";
+import { Canvas, Rect, IEvent, Object as FabricObject } from "fabric";
 
 export const Canvas2D = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,55 +10,65 @@ export const Canvas2D = () => {
   // Initialize canvas
   useEffect(() => {
     if (canvasRef.current && !fabricCanvas) {
-      const canvas = new Canvas(canvasRef.current, {
-        width: 800,
-        height: 600,
-        backgroundColor: "#f0f0f0",
-        selection: true,
-      });
-      
-      setFabricCanvas(canvas);
-      
-      return () => {
-        canvas.dispose();
-      };
+      // Make sure we only initialize once
+      try {
+        const canvas = new Canvas(canvasRef.current, {
+          width: 800,
+          height: 600,
+          backgroundColor: "#f0f0f0",
+          selection: true,
+        });
+        
+        setFabricCanvas(canvas);
+        
+        // Clean up function
+        return () => {
+          canvas.dispose();
+        };
+      } catch (error) {
+        console.error("Error initializing fabric canvas:", error);
+      }
     }
-  }, [canvasRef, fabricCanvas]);
+  }, [canvasRef.current]); // Only run when canvasRef.current changes
   
   // Draw room
   useEffect(() => {
     if (!fabricCanvas || !currentRoom) return;
     
-    // Clear canvas
-    fabricCanvas.clear();
-    
-    // Calculate scale to fit room in canvas
-    const canvasWidth = fabricCanvas.getWidth();
-    const canvasHeight = fabricCanvas.getHeight();
-    const roomWidth = currentRoom.width;
-    const roomLength = currentRoom.length;
-    
-    // Use the smallest scale to ensure room fits in canvas
-    const scaleX = canvasWidth / roomWidth;
-    const scaleY = canvasHeight / roomLength;
-    const scale = Math.min(scaleX, scaleY) * 0.8; // 80% of available space
-    
-    // Create room rectangle
-    const scaledWidth = roomWidth * scale;
-    const scaledLength = roomLength * scale;
-    const room = new Rect({
-      left: (canvasWidth - scaledWidth) / 2,
-      top: (canvasHeight - scaledLength) / 2,
-      width: scaledWidth,
-      height: scaledLength,
-      fill: currentRoom.floorColor,
-      stroke: currentRoom.wallColor,
-      strokeWidth: 10,
-      selectable: false,
-    });
-    
-    fabricCanvas.add(room);
-    fabricCanvas.renderAll();
+    try {
+      // Clear canvas
+      fabricCanvas.clear();
+      
+      // Calculate scale to fit room in canvas
+      const canvasWidth = fabricCanvas.getWidth();
+      const canvasHeight = fabricCanvas.getHeight();
+      const roomWidth = currentRoom.width;
+      const roomLength = currentRoom.length;
+      
+      // Use the smallest scale to ensure room fits in canvas
+      const scaleX = canvasWidth / roomWidth;
+      const scaleY = canvasHeight / roomLength;
+      const scale = Math.min(scaleX, scaleY) * 0.8; // 80% of available space
+      
+      // Create room rectangle
+      const scaledWidth = roomWidth * scale;
+      const scaledLength = roomLength * scale;
+      const room = new Rect({
+        left: (canvasWidth - scaledWidth) / 2,
+        top: (canvasHeight - scaledLength) / 2,
+        width: scaledWidth,
+        height: scaledLength,
+        fill: currentRoom.floorColor,
+        stroke: currentRoom.wallColor,
+        strokeWidth: 10,
+        selectable: false,
+      });
+      
+      fabricCanvas.add(room);
+      fabricCanvas.renderAll();
+    } catch (error) {
+      console.error("Error drawing room:", error);
+    }
     
   }, [fabricCanvas, currentRoom]);
 
@@ -66,81 +76,86 @@ export const Canvas2D = () => {
   useEffect(() => {
     if (!fabricCanvas || !currentRoom || placedFurniture.length === 0) return;
     
-    // Calculate scale
-    const canvasWidth = fabricCanvas.getWidth();
-    const canvasHeight = fabricCanvas.getHeight();
-    const roomWidth = currentRoom.width;
-    const roomLength = currentRoom.length;
-    
-    const scaleX = canvasWidth / roomWidth;
-    const scaleY = canvasHeight / roomLength;
-    const scale = Math.min(scaleX, scaleY) * 0.8;
-    
-    // Room position
-    const roomLeft = (canvasWidth - (roomWidth * scale)) / 2;
-    const roomTop = (canvasHeight - (roomLength * scale)) / 2;
-    
-    // Add furniture
-    placedFurniture.forEach((item, index) => {
-      const furniture = furnitureCatalog.find(f => f.id === item.furnitureId);
-      if (!furniture) return;
+    try {
+      // Calculate scale
+      const canvasWidth = fabricCanvas.getWidth();
+      const canvasHeight = fabricCanvas.getHeight();
+      const roomWidth = currentRoom.width;
+      const roomLength = currentRoom.length;
       
-      // Calculate furniture position in canvas coordinates
-      const furnitureX = roomLeft + (item.x * scale);
-      const furnitureZ = roomTop + (item.z * scale);
+      const scaleX = canvasWidth / roomWidth;
+      const scaleY = canvasHeight / roomLength;
+      const scale = Math.min(scaleX, scaleY) * 0.8;
       
-      // Calculate furniture dimensions in canvas coordinates
-      const furnitureWidth = furniture.width * scale * item.scale;
-      const furnitureLength = furniture.length * scale * item.scale;
+      // Room position
+      const roomLeft = (canvasWidth - (roomWidth * scale)) / 2;
+      const roomTop = (canvasHeight - (roomLength * scale)) / 2;
       
-      const rect = new Rect({
-        left: furnitureX,
-        top: furnitureZ,
-        width: furnitureWidth,
-        height: furnitureLength,
-        fill: item.color,
-        angle: item.rotation,
-        originX: 'center',
-        originY: 'center',
-        hasControls: true,
-        hasBorders: true,
-        cornerColor: 'rgba(121, 82, 179, 0.7)',
-        transparentCorners: false,
-      });
-      
-      rect.on('moving', (e) => {
-        const target = e.target;
-        const roomBounds = {
-          left: roomLeft,
-          top: roomTop,
-          right: roomLeft + (roomWidth * scale),
-          bottom: roomTop + (roomLength * scale)
-        };
+      // Add furniture
+      placedFurniture.forEach((item, index) => {
+        const furniture = furnitureCatalog.find(f => f.id === item.furnitureId);
+        if (!furniture) return;
         
-        // Keep furniture within room bounds
-        if (target.left < roomBounds.left) target.left = roomBounds.left;
-        if (target.top < roomBounds.top) target.top = roomBounds.top;
-        if (target.left + target.width > roomBounds.right) target.left = roomBounds.right - target.width;
-        if (target.top + target.height > roomBounds.bottom) target.top = roomBounds.bottom - target.height;
-      });
-      
-      rect.on('modified', () => {
-        // Convert back to room coordinates
-        const updatedX = ((rect.left || 0) - roomLeft) / scale;
-        const updatedZ = ((rect.top || 0) - roomTop) / scale;
-        const updatedRotation = rect.angle || 0;
+        // Calculate furniture position in canvas coordinates
+        const furnitureX = roomLeft + (item.x * scale);
+        const furnitureZ = roomTop + (item.z * scale);
         
-        updateFurniturePosition(index, { 
-          x: updatedX, 
-          z: updatedZ, 
-          rotation: updatedRotation 
+        // Calculate furniture dimensions in canvas coordinates
+        const furnitureWidth = furniture.width * scale * item.scale;
+        const furnitureLength = furniture.length * scale * item.scale;
+        
+        const rect = new Rect({
+          left: furnitureX,
+          top: furnitureZ,
+          width: furnitureWidth,
+          height: furnitureLength,
+          fill: item.color,
+          angle: item.rotation,
+          originX: 'center',
+          originY: 'center',
+          hasControls: true,
+          hasBorders: true,
+          cornerColor: 'rgba(121, 82, 179, 0.7)',
+          transparentCorners: false,
         });
+        
+        // Fix the TypeScript error by using proper event type
+        rect.on('moving', function(opt) {
+          const obj = this;
+          const roomBounds = {
+            left: roomLeft,
+            top: roomTop,
+            right: roomLeft + (roomWidth * scale),
+            bottom: roomTop + (roomLength * scale)
+          };
+          
+          // Keep furniture within room bounds
+          if (obj.left! < roomBounds.left) obj.set('left', roomBounds.left);
+          if (obj.top! < roomBounds.top) obj.set('top', roomBounds.top);
+          if (obj.left! + obj.width! > roomBounds.right) obj.set('left', roomBounds.right - obj.width!);
+          if (obj.top! + obj.height! > roomBounds.bottom) obj.set('top', roomBounds.bottom - obj.height!);
+        });
+        
+        rect.on('modified', function() {
+          // Convert back to room coordinates
+          const updatedX = ((this.left || 0) - roomLeft) / scale;
+          const updatedZ = ((this.top || 0) - roomTop) / scale;
+          const updatedRotation = this.angle || 0;
+          
+          updateFurniturePosition(index, { 
+            x: updatedX, 
+            z: updatedZ, 
+            rotation: updatedRotation 
+          });
+        });
+        
+        fabricCanvas.add(rect);
       });
       
-      fabricCanvas.add(rect);
-    });
-    
-    fabricCanvas.renderAll();
+      fabricCanvas.renderAll();
+    } catch (error) {
+      console.error("Error drawing furniture:", error);
+    }
     
   }, [fabricCanvas, currentRoom, placedFurniture, furnitureCatalog, updateFurniturePosition]);
   
