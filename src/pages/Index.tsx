@@ -8,6 +8,7 @@ import { RoomControls } from "@/components/RoomControls";
 import { FurnitureCatalog } from "@/components/FurnitureCatalog";
 import { PlacedFurnitureList } from "@/components/PlacedFurnitureList";
 import { mockFurniture } from "@/data/mockData";
+import { ViewModeSelector } from "@/components/ViewModeSelector";
 
 const Index = () => {
   const { viewMode, setFurnitureCatalog } = useDesign();
@@ -22,7 +23,10 @@ const Index = () => {
       <Header />
       
       <main className="flex-1 container py-6">
-        <h1 className="text-3xl font-bold mb-6">Room Visualizer</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Room Visualizer</h1>
+          <ViewModeSelector />
+        </div>
         
         <div className="grid grid-cols-12 gap-6">
           {/* Left sidebar */}

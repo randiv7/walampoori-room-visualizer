@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useDesign } from "@/contexts/DesignContext";
 import { Canvas, Rect, TEvent, Object as FabricObject } from "fabric";
@@ -11,7 +10,6 @@ export const Canvas2D = () => {
   // Initialize canvas
   useEffect(() => {
     if (canvasRef.current && !fabricCanvas) {
-      // Make sure we only initialize once
       try {
         const canvas = new Canvas(canvasRef.current, {
           width: 800,
@@ -30,7 +28,7 @@ export const Canvas2D = () => {
         console.error("Error initializing fabric canvas:", error);
       }
     }
-  }, [canvasRef, fabricCanvas]); // Depend on both canvasRef and fabricCanvas
+  }, [fabricCanvas]); // Only depend on fabricCanvas to prevent re-initialization
   
   // Draw room
   useEffect(() => {

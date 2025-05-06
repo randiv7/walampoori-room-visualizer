@@ -1,42 +1,134 @@
 
-import React from "react";
+import React, { Suspense, useRef } from "react";
 import { useDesign } from "@/contexts/DesignContext";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera, Box, Plane } from "@react-three/drei";
 
 export const Canvas3D = () => {
-  const { currentRoom, placedFurniture } = useDesign();
+  const { currentRoom, placedFurniture, furnitureCatalog } = useDesign();
+
+  const getFurnitureById = (id: string) => {
+    return furnitureCatalog.find(item => item.id === id);
+  };
+
+  if (!currentRoom) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-900 text-white">
+        <p>No room configuration found.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="canvas-3d w-full h-full border border-border rounded-md bg-gray-900 flex items-center justify-center">
-      <div className="text-white text-center p-4">
-        <h3 className="text-lg font-medium mb-2">3D Visualization</h3>
-        <p className="text-sm opacity-70 mb-4">
-          In the complete app, this area will display a 3D visualization of your room using Three.js.
-        </p>
-        <div className="p-4 bg-gray-800 rounded-md max-w-md mx-auto">
-          <h4 className="font-medium mb-2">Room Details:</h4>
-          {currentRoom && (
-            <ul className="text-sm text-left">
-              <li>Name: {currentRoom.name}</li>
-              <li>Dimensions: {currentRoom.width}m x {currentRoom.length}m x {currentRoom.height}m</li>
-              <li>Wall Color: <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: currentRoom.wallColor }}></span> {currentRoom.wallColor}</li>
-              <li>Floor Color: <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: currentRoom.floorColor }}></span> {currentRoom.floorColor}</li>
-            </ul>
-          )}
-          {placedFurniture.length > 0 && (
-            <>
-              <h4 className="font-medium mt-4 mb-2">Furniture Items:</h4>
-              <ul className="text-sm text-left">
-                {placedFurniture.map((item, index) => (
-                  <li key={index}>
-                    Item {index + 1}: Position ({item.x.toFixed(1)}, {item.z.toFixed(1)}), 
-                    Rotation: {item.rotation.toFixed(0)}°
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+    <div className="canvas-3d w-full h-full border border-border rounded-md bg-gray-900 relative">
+      <Canvas shadows className="w-full h-full">
+        <Suspense fallback={null}>
+          <ambientLight intensity={0.5} />
+          <directionalLight 
+            position={[5, 10, 5]} 
+            intensity={1} 
+            castShadow 
+            shadow-mapSize-width={1024} 
+            shadow-mapSize-height={1024}
+          />
+          
+          {/* Room */}
+          <Room room={currentRoom} />
+          
+          {/* Furniture */}
+          {placedFurniture.map((item, index) => {
+            const furniture = getFurnitureById(item.furnitureId);
+            if (!furniture) return null;
+            
+            return (
+              <Furniture 
+                key={index}
+                furniture={furniture}
+                position={item}
+              />
+            );
+          })}
+          
+          <OrbitControls 
+            enableZoom={true} 
+            enablePan={true} 
+            enableRotate={true}
+            minDistance={2}
+            maxDistance={10}
+          />
+          <PerspectiveCamera
+            makeDefault
+            position={[currentRoom.width / 2, currentRoom.height * 1.5, currentRoom.length * 1.5]}
+            fov={50}
+          />
+        </Suspense>
+      </Canvas>
+      
+      <div className="absolute bottom-4 left-4 bg-black/60 text-white p-2 rounded">
+        <p className="text-xs">Room: {currentRoom.name}</p>
+        <p className="text-xs">Dimensions: {currentRoom.width}m x {currentRoom.length}m x {currentRoom.height}m</p>
+        <p className="text-xs">Items: {placedFurniture.length}</p>
       </div>
     </div>
+  );
+};
+
+// Room component
+const Room = ({ room }: { room: { width: number, length: number, height: number, wallColor: string, floorColor: string } }) => {
+  return (
+    <group>
+      {/* Floor */}
+      <Plane 
+        args={[room.width, room.length]} 
+        rotation={[-Math.PI / 2, 0, 0]} 
+        position={[room.width / 2, 0, room.length / 2]}
+        receiveShadow
+      >
+        <meshStandardMaterial color={room.floorColor} />
+      </Plane>
+      
+      {/* Back Wall */}
+      <Plane 
+        args={[room.width, room.height]} 
+        position={[room.width / 2, room.height / 2, 0]}
+        receiveShadow
+      >
+        <meshStandardMaterial color={room.wallColor} />
+      </Plane>
+      
+      {/* Left Wall */}
+      <Plane 
+        args={[room.length, room.height]} 
+        rotation={[0, Math.PI / 2, 0]}
+        position={[0, room.height / 2, room.length / 2]}
+        receiveShadow
+      >
+        <meshStandardMaterial color={room.wallColor} />
+      </Plane>
+    </group>
+  );
+};
+
+// Furniture component
+const Furniture = ({ 
+  furniture, 
+  position 
+}: { 
+  furniture: { width: number, length: number, height: number }, 
+  position: { x: number, y: number, z: number, rotation: number, scale: number, color: string } 
+}) => {
+  return (
+    <group 
+      position={[position.x, position.y + furniture.height * position.scale / 2, position.z]} 
+      rotation={[0, position.rotation * Math.PI / 180, 0]}
+      scale={position.scale}
+    >
+      <Box 
+        args={[furniture.width, furniture.height, furniture.length]}
+        castShadow
+      >
+        <meshStandardMaterial color={position.color} />
+      </Box>
+    </group>
   );
 };
