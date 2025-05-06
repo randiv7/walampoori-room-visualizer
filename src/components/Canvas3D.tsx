@@ -2,7 +2,7 @@
 import React, { Suspense } from "react";
 import { useDesign } from "@/contexts/DesignContext";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Box, Plane } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 
 export const Canvas3D = () => {
   const { currentRoom, placedFurniture, furnitureCatalog } = useDesign();
@@ -28,8 +28,6 @@ export const Canvas3D = () => {
             position={[5, 10, 5]} 
             intensity={1} 
             castShadow 
-            shadow-mapSize-width={1024} 
-            shadow-mapSize-height={1024}
           />
           
           {/* Room */}
@@ -88,33 +86,33 @@ const Room = ({ room }: RoomProps) => {
   return (
     <group>
       {/* Floor */}
-      <Plane 
-        args={[room.width, room.length]} 
+      <mesh 
         rotation={[-Math.PI / 2, 0, 0]} 
         position={[room.width / 2, 0, room.length / 2]}
         receiveShadow
       >
-        <meshStandardMaterial attach="material" color={room.floorColor} />
-      </Plane>
+        <planeGeometry args={[room.width, room.length]} />
+        <meshStandardMaterial color={room.floorColor} />
+      </mesh>
       
       {/* Back Wall */}
-      <Plane 
-        args={[room.width, room.height]} 
+      <mesh 
         position={[room.width / 2, room.height / 2, 0]}
         receiveShadow
       >
-        <meshStandardMaterial attach="material" color={room.wallColor} />
-      </Plane>
+        <planeGeometry args={[room.width, room.height]} />
+        <meshStandardMaterial color={room.wallColor} />
+      </mesh>
       
       {/* Left Wall */}
-      <Plane 
-        args={[room.length, room.height]} 
+      <mesh 
         rotation={[0, Math.PI / 2, 0]}
         position={[0, room.height / 2, room.length / 2]}
         receiveShadow
       >
-        <meshStandardMaterial attach="material" color={room.wallColor} />
-      </Plane>
+        <planeGeometry args={[room.length, room.height]} />
+        <meshStandardMaterial color={room.wallColor} />
+      </mesh>
     </group>
   );
 };
@@ -143,12 +141,10 @@ const Furniture = ({ furniture, position }: FurnitureProps) => {
       rotation={[0, position.rotation * Math.PI / 180, 0]}
       scale={position.scale}
     >
-      <Box 
-        args={[furniture.width, furniture.height, furniture.length]}
-        castShadow
-      >
-        <meshStandardMaterial attach="material" color={position.color} />
-      </Box>
+      <mesh castShadow>
+        <boxGeometry args={[furniture.width, furniture.height, furniture.length]} />
+        <meshStandardMaterial color={position.color} />
+      </mesh>
     </group>
   );
 };
