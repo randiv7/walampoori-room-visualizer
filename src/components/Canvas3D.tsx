@@ -84,7 +84,7 @@ const Room = ({ room }: { room: { width: number, length: number, height: number,
         position={[room.width / 2, 0, room.length / 2]}
         receiveShadow
       >
-        <meshStandardMaterial color={room.floorColor} />
+        <meshStandardMaterial attach="material" color={room.floorColor} />
       </Plane>
       
       {/* Back Wall */}
@@ -93,7 +93,7 @@ const Room = ({ room }: { room: { width: number, length: number, height: number,
         position={[room.width / 2, room.height / 2, 0]}
         receiveShadow
       >
-        <meshStandardMaterial color={room.wallColor} />
+        <meshStandardMaterial attach="material" color={room.wallColor} />
       </Plane>
       
       {/* Left Wall */}
@@ -103,7 +103,7 @@ const Room = ({ room }: { room: { width: number, length: number, height: number,
         position={[0, room.height / 2, room.length / 2]}
         receiveShadow
       >
-        <meshStandardMaterial color={room.wallColor} />
+        <meshStandardMaterial attach="material" color={room.wallColor} />
       </Plane>
     </group>
   );
@@ -127,7 +127,7 @@ const Furniture = ({
         args={[furniture.width, furniture.height, furniture.length]}
         castShadow
       >
-        <meshStandardMaterial color={position.color} />
+        <meshStandardMaterial attach="material" color={position.color} />
       </Box>
     </group>
   );
