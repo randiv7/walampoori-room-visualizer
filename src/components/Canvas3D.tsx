@@ -1,5 +1,5 @@
 
-import React, { Suspense, useRef } from "react";
+import React, { Suspense } from "react";
 import { useDesign } from "@/contexts/DesignContext";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Box, Plane } from "@react-three/drei";
@@ -74,7 +74,17 @@ export const Canvas3D = () => {
 };
 
 // Room component
-const Room = ({ room }: { room: { width: number, length: number, height: number, wallColor: string, floorColor: string } }) => {
+interface RoomProps {
+  room: {
+    width: number;
+    length: number;
+    height: number;
+    wallColor: string;
+    floorColor: string;
+  };
+}
+
+const Room = ({ room }: RoomProps) => {
   return (
     <group>
       {/* Floor */}
@@ -110,13 +120,23 @@ const Room = ({ room }: { room: { width: number, length: number, height: number,
 };
 
 // Furniture component
-const Furniture = ({ 
-  furniture, 
-  position 
-}: { 
-  furniture: { width: number, length: number, height: number }, 
-  position: { x: number, y: number, z: number, rotation: number, scale: number, color: string } 
-}) => {
+interface FurnitureProps {
+  furniture: {
+    width: number;
+    length: number;
+    height: number;
+  };
+  position: {
+    x: number;
+    y: number;
+    z: number;
+    rotation: number;
+    scale: number;
+    color: string;
+  };
+}
+
+const Furniture = ({ furniture, position }: FurnitureProps) => {
   return (
     <group 
       position={[position.x, position.y + furniture.height * position.scale / 2, position.z]} 
