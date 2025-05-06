@@ -21,7 +21,7 @@ export const Canvas3D = () => {
 
   return (
     <div className="canvas-3d w-full h-full border border-border rounded-md bg-gray-900 relative">
-      <Canvas shadows className="w-full h-full">
+      <Canvas shadows>
         <Suspense fallback={null}>
           <ambientLight intensity={0.5} />
           <directionalLight 
